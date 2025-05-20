@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: FinanceBot
+  datasource:
+    url: jdbc:postgresql://localhost:5432/financebot
+    username: ishenaly
+    password: ${DB_PASSWORD} # Храним пароль в переменной окружения
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Для разработки, потом заменим на validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+bot:
+  token: ${BOT_TOKEN} # Токен бота из BotFather
+  username: finance_abit8_bot
