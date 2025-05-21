@@ -71,7 +71,8 @@ public class FinanceBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
             Long chatId = update.getMessage().getChatId();
-            User user = financeBotService.registerOrGetUser(chatId);
+            String telegramUsername = update.getMessage().getFrom().getUserName();
+            User user = financeBotService.registerOrGetUser(chatId, telegramUsername);
             Locale locale = new Locale(user.getLanguage().name());
 
             logger.info("Received message from user {}: {}", chatId, text);
@@ -154,7 +155,8 @@ public class FinanceBot extends TelegramLongPollingBot {
     private void handleCallbackQuery(Update update) {
         String callbackData = update.getCallbackQuery().getData();
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
-        User user = financeBotService.registerOrGetUser(chatId);
+        String telegramUsername = update.getCallbackQuery().getFrom().getUserName();
+        User user = financeBotService.registerOrGetUser(chatId, telegramUsername);
         Locale locale = new Locale(user.getLanguage().name());
         logger.info("Received callback query from user {}: {}", chatId, callbackData);
         if (callbackData.equals("EXPORT_MONTH")) {

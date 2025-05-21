@@ -8,7 +8,6 @@ import com.abit8.financebot.model.TransactionType;
 import com.abit8.financebot.repository.CategoryRepository;
 import com.abit8.financebot.repository.TransactionRepository;
 import com.abit8.financebot.repository.UserRepository;
-import com.abit8.financebot.util.CurrencyConverter;
 import com.abit8.financebot.util.CurrencyRateCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -36,15 +34,22 @@ public class FinanceBotService {
     private static final Pattern TRANSACTION_PATTERN =
             Pattern.compile("^([+\\-])\\s*([\\d\\s\\.]+)(?:\\s+(\\S+))?(?:\\s+(.+))?$");
 
-    public User registerOrGetUser(Long chatId) {
+    public User registerOrGetUser(Long chatId, String username) {
         Optional<User> userOpt = userRepository.findByChatId(chatId);
+        User user;
         if (userOpt.isPresent()) {
-            return userOpt.get();
+            user = userOpt.get();
+            if (user.getUsername() == null && username != null) {
+                user.setUsername(username);
+                user = userRepository.save(user);
+            }
+        } else {
+            user = new User();
+            user.setChatId(chatId);
+            user.setTrialEndDate(LocalDate.now().plusDays(7));
+            user.setUsername(username); // сохраняем при создании
+            user = userRepository.save(user);
         }
-        User user = new User();
-        user.setChatId(chatId);
-        user.setTrialEndDate(LocalDate.now().plusDays(7));
-        user = userRepository.save(user);
         return user;
     }
 
@@ -101,7 +106,8 @@ public class FinanceBotService {
     public String processTransactionText(Update update) {
         String text = update.getMessage().getText();
         Long chatId = update.getMessage().getChatId();
-        User user = registerOrGetUser(chatId);
+        String telegramUsername = update.getMessage().getFrom().getUserName();
+        User user = registerOrGetUser(chatId, telegramUsername);
         Locale locale = new Locale(user.getLanguage().name());
 
         if (!isUserPremium(user)) {

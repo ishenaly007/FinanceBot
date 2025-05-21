@@ -43,6 +43,9 @@ public class User {
     @Column(name = "trial_end_date")
     private LocalDate trialEndDate;
 
+    @Column(name = "username")
+    private String username;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
