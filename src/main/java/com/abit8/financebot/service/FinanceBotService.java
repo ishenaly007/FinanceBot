@@ -224,10 +224,12 @@ public class FinanceBotService {
             String comment = Optional.ofNullable(tx.getComment()).orElse("").trim();
             String time = tx.getTime().format(timeFmt);
 
-            String amountStr = sign
-                               + tx.getAmount().stripTrailingZeros().toPlainString()
-                               + " "
-                               + tx.getCurrency().toString().toLowerCase(locale);
+            String amountStr;
+            if (tx.getCurrency() == Currency.СОМ || tx.getCurrency() == Currency.РУБ) {
+                amountStr = sign + tx.getAmount().setScale(0, BigDecimal.ROUND_DOWN).toPlainString() + " " + tx.getCurrency().toString().toLowerCase(locale);
+            } else {
+                amountStr = sign + tx.getAmount().setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString() + " " + tx.getCurrency().toString().toLowerCase(locale);
+            }
 
             String line = !comment.isEmpty()
                     ? String.format("%d) %s — %s ", counter, amountStr, comment)
@@ -246,6 +248,7 @@ public class FinanceBotService {
                     log.error("Failed to convert currency for transaction {}: {}", tx.getId(), e.getMessage());
                 }
             }
+
             if (tx.getType() == TransactionType.INCOME) {
                 income = income.add(amount);
             } else {
@@ -264,14 +267,24 @@ public class FinanceBotService {
 
         // Итог дня
         sb.append("*");
+        String balanceStr;
+        if (user.getCurrency() == Currency.СОМ || user.getCurrency() == Currency.РУБ) {
+            balanceStr = (income.compareTo(expense) >= 0
+                    ? income.subtract(expense)
+                    : expense.subtract(income)).setScale(0, BigDecimal.ROUND_DOWN).toPlainString();
+        } else {
+            balanceStr = (income.compareTo(expense) >= 0
+                    ? income.subtract(expense)
+                    : expense.subtract(income)).setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString();
+        }
         if (income.compareTo(expense) >= 0) {
             sb.append(messageSource.getMessage("income_today", null, locale))
                     .append(": +")
-                    .append(income.subtract(expense).stripTrailingZeros().toPlainString());
+                    .append(balanceStr);
         } else {
             sb.append(messageSource.getMessage("expense_today", null, locale))
                     .append(": -")
-                    .append(expense.subtract(income).stripTrailingZeros().toPlainString());
+                    .append(balanceStr);
         }
         sb.append(" ")
                 .append(user.getCurrency().toString().toLowerCase(locale))

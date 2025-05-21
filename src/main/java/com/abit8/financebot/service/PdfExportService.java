@@ -628,6 +628,15 @@ public class PdfExportService {
 
     private String formatCurrency(double amount, Currency currency, Locale locale) {
         NumberFormat numberFormatter = NumberFormat.getNumberInstance(locale);
+
+        // Для KGS и RUB убираем дробную часть
+        if (currency == Currency.СОМ || currency == Currency.РУБ) {
+            numberFormatter.setMaximumFractionDigits(0);
+        } else {
+            numberFormatter.setMaximumFractionDigits(2);
+            numberFormatter.setMinimumFractionDigits(2);
+        }
+
         String formattedAmount = numberFormatter.format(amount);
         String currencySymbol = currency.name().toLowerCase();
         return formattedAmount + " " + currencySymbol;
